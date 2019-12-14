@@ -1,0 +1,357 @@
+    <html>
+    <head>
+    <meta charset="utf8">
+    <title>Solar System</title>
+    <style >
+    body{
+    	background: black;
+    	margin: 0px;
+    }
+
+
+    </style>
+    <script src="three.min.js"></script>
+    <script src="RollControls.js"></script>
+    </head>
+
+    <body>
+        
+    <script>
+    alert("Please open the html file by Firefox to see the texture.");
+    var scene, camera, render, container,controls;
+    var W,H;
+    var light;
+
+    var tiltAngle = 40;
+    //add planets in the scene
+    var Planet = function(radius,texture,spec,shin)
+    {
+        this.radius = radius;
+        this.texture = texture;
+        this.init = function(){
+            var g = new THREE.SphereGeometry(this.radius,40,40);
+            var onloadT = THREE.ImageUtils.loadTexture(this.texture);
+            onloadT.anisotropy =8;
+            var m = new THREE.MeshPhongMaterial({specular:spec,shininess:shin,map:onloadT});
+            var M = new THREE.Mesh(g,m);
+            M.castShadow = true;
+
+            return M;
+        };
+    };
+
+
+    //add orbit for planets
+    var Orbit = function(radius)
+    {
+        this.radius = radius;
+
+        this.draw = function(scene)
+        {
+            var og = new THREE.Geometry();
+            var om = new THREE.ParticleBasicMaterial({color:0xbfbfbf,size:1,opacity:0.8,sizeAttenuation:false});
+            for(var i=0; i<50000;i++)
+            {
+                var v = new THREE.Vector3();
+                v.x=Math.sin(Math.PI/180*i)*this.radius;
+                v.z=Math.cos(Math.PI/180*i)*this.radius;
+                og.vertices.push(v);
+
+            }
+            var obj = new THREE.ParticleSystem(og,om);
+            scene.add(obj);
+        };
+    };
+    //background
+    // Load the background texture
+            var bg_texture = THREE.ImageUtils.loadTexture( 'stardust.jpg' );
+            var backgroundMesh = new THREE.Mesh(
+                new THREE.PlaneGeometry(2, 2, 0),
+                new THREE.MeshBasicMaterial({
+                    map: bg_texture
+                }));
+
+            backgroundMesh .material.depthTest = false;
+            backgroundMesh .material.depthWrite = false;
+
+            // Create your background scene
+            var backgroundScene = new THREE.Scene();
+                var backgroundCamera = new THREE.Camera();
+            backgroundScene .add(backgroundCamera );
+            backgroundScene .add(backgroundMesh );
+
+
+
+    W=parseInt(document.body.clientWidth);
+    H=parseInt(document.body.clientHeight);
+
+    container=document.createElement('div');
+    document.body.appendChild(container);
+
+    //set up camera
+    camera=new THREE.PerspectiveCamera(45,W/H,1,1000000);
+    camera.position.z=50000;
+    camera.position.y = 2000;
+    camera.rotation.z= -Math.PI/20;
+    scene =new THREE.Scene();
+    scene.add(camera);
+
+    //set up controls
+    controls=new THREE.RollControls(camera);
+    controls.movementSpeed=28000;
+    controls.lookSpeed=1.6;
+
+
+    //set up light
+    light=new THREE.PointLight(0xffffff,1.4,200000);
+    light.position.set(0,0,0);
+    light.castShadow=true;
+    light.shadowMapWidth=2048;
+    light.shadowMapHeight=2048;
+    scene.add(light);
+      
+    //stars as backgroud
+    var starsGeometry=new THREE.Geometry();
+    var starsMaterial=new THREE.ParticleBasicMaterial({color:0xbbbbbb,size:0.8,sizeAttenuation:false});
+    var stars;
+
+    for(var i=0;i<15000;i++)
+    {
+    	var vertex=new THREE.Vector3();
+    	vertex.x=Math.random()*2-1;
+    	vertex.y=Math.random()*2-1;
+    	vertex.z=Math.random()*2-1;
+    	vertex.multiplyScalar(6000);
+    	starsGeometry.vertices.push(vertex);
+    }
+
+    stars= new THREE.ParticleSystem(starsGeometry,starsMaterial);
+    stars.scale.set(50,50,50);
+    scene.add(stars);
+
+    scene.add(new THREE.AmbientLight(0x969696));
+    //scene.add(new THREE.AmbientLight(0x222222));
+
+    //add sun and planets in solar system
+    //Sun
+    var thesun, sun_geom, sun_mat;
+    sun_geom=new THREE.SphereGeometry(1000,80,80);
+    var texture=THREE.ImageUtils.loadTexture('sun.jpg');
+    texture.anisotropy=8;
+    sun_mat=new THREE.MeshPhongMaterial({map:texture,
+        emissive:0xffffff});
+    //sun_mat=new THREE.MeshNormalMaterial();
+    thesun=new THREE.Mesh(sun_geom,sun_mat);
+    scene.add(thesun);
+
+    var thesun2;
+    //sun_mat=new THREE.MeshNormalMaterial();
+    thesun2=new THREE.Mesh(sun_geom,sun_mat);
+    scene.add(thesun2);
+
+    //mercury
+    var mercury = new Planet(60*5,"mercury.jpg",0xffffff,30).init();
+    scene.add(mercury);
+
+    //Venus
+    var venus = new Planet(90*5,"venus.jpg",0xffffdd,25).init();
+    scene.add(venus);
+
+    //Mars
+    var mars = new Planet(80*5,"mars.jpg",0x0000ff,10).init();
+    scene.add(mars);
+
+    //Earth
+    //moon -- satellite of earth
+    var moon_geo = new THREE.SphereGeometry(80,20,20);
+    var moon_texture = THREE.ImageUtils.loadTexture('moon.jpg');
+    moon_texture.anisotropy = 8;
+    var moon_mat = new THREE.MeshPhongMaterial({map:moon_texture});
+    var moon = new THREE.Mesh(moon_geo,moon_mat);
+
+    var moon2_texture = THREE.ImageUtils.loadTexture('moon2.jpg');
+    moon2_texture.anisotropy = 8;
+    var moon_mat2 = new THREE.MeshPhongMaterial({map:moon2_texture});
+
+    var moon2 = new THREE.Mesh(moon_geo,moon_mat2);
+    moon.castShadow = true;
+    moon2.castShadow = true;
+    //earth -- parent of moon
+    var earth = new Planet(100*5,"earth.jpg",0x000fff,15).init();
+    earth.rotation.y+=Math.PI/180 * 40;
+    moon.rotation.y +=Math.PI/180 * 40;
+    moon2.rotation.y +=Math.PI/180 * 40;
+
+    earth.add(moon);
+    earth.add(moon2);
+
+    scene.add(earth);
+    earth.rotation.z = tiltAngle*Math.PI/180;
+
+
+    //Jupiter
+    var jupeter = new Planet(350*5,"jupiter.jpg",0x0000fd,13).init();
+    scene.add(jupeter);
+
+    //Saturn
+    var saturn = new Planet(350*5,"saturn.jpg",0x00ffee,17).init();
+    scene.add(saturn);
+
+    //the ring of Saturn
+    var ring_saturn_geom = new THREE.Geometry();
+    var ring_saturn_mat = new THREE.ParticleBasicMaterial({color:0x3A3A3A,opacity:0.3,size:1,sizeAttenuation:false});
+
+    for(var i=0;i<20000;i++)
+    {
+        var vertex = new THREE.Vector3();
+        vertex.x = Math.sin(Math.PI/180*i)*(550*5-i/80);
+        vertex.y = Math.random()*20;
+        vertex.z = Math.cos(Math.PI/180*i)*(550*5-i/80);
+        ring_saturn_geom.vertices.push(vertex);
+    }
+
+    var ring = new THREE.ParticleSystem(ring_saturn_geom,ring_saturn_mat);
+    ring.castShadow = true;
+    scene.add(ring);  // 0 0 0
+
+    //uranus
+    var uranus = new Planet(350*5,"uranus.jpg",0x0000fe,12).init();
+    scene.add(uranus);
+
+    //neptune
+    var neptune = new Planet(200*5,"neptune.jpg",0x0000ff,14).init();
+    scene.add(neptune);
+
+
+    //add orbits of earth,mercury,venus,mars,jupeter,saturn,uranus,nepture
+    //Earth
+
+    var earth_orbit = new Orbit(30000);
+    earth_orbit.draw(scene);
+
+    //Mercury
+    var mercury_orbit = new Orbit(8000);
+    mercury_orbit.draw(scene);
+
+    //Venus
+    var Venus_orbit = new Orbit(17000);
+    Venus_orbit.draw(scene);
+
+    //Mars
+    var Mars_orbit = new Orbit(50000);
+    Mars_orbit.draw(scene);
+
+    //Jupeter
+    var Jupeter_orbit = new Orbit(74000);
+    Jupeter_orbit.draw(scene);
+
+    //Saturn
+    var Saturn_orbit = new Orbit(98000);
+    Saturn_orbit.draw(scene);
+
+    //Uranus
+    var Uranus_orbit = new Orbit(120000);
+    Uranus_orbit.draw(scene);
+
+    //Nepture
+    var Nepture_orbit = new Orbit(180000);
+    Nepture_orbit.draw(scene);
+
+    render=new THREE.WebGLRenderer({antialias:true});
+    render.setSize(W,H);
+    container.appendChild(render.domElement);
+
+    var t=0;
+    //var y=0;
+
+    /*document.addEventListener('mousemove',function (event)
+    {
+    	y=parseInt(event.offsetY);
+    });
+    */
+    var theta = 0;
+    var quaternion = new THREE.Quaternion();
+
+    var tiltAxis = new THREE.Vector3( -Math.sin(tiltAngle*Math.PI/180), Math.cos(tiltAngle*Math.PI/180), 0 );
+    tiltAxis = tiltAxis.normalize();
+
+    animate();
+
+    function animate(){
+    	requestAnimationFrame(animate);
+        controls.update(0.01);
+    	thesun.rotation.y+=0.001;
+
+        thesun.position.x = Math.sin(t*2+Math.PI)*2000;
+        thesun.position.z = Math.cos(t*2+Math.PI)*2000;
+
+        thesun2.position.x = Math.sin(t*2)*2000;
+        thesun2.position.z = Math.cos(t*2)*2000;
+
+    	earth.position.x=Math.sin(t*0.1)*30000;
+    	earth.position.z=Math.cos(t*0.1)*30000;
+
+        moon.position.x=Math.sin(t*0.7)*800;
+        moon.position.z=Math.cos(t*0.7)*800;
+
+        moon2.position.x=Math.sin(0)*800;
+        moon2.position.z=Math.cos(0)*800;
+
+        quaternion.setFromAxisAngle( tiltAxis, theta);
+        earth.rotation.setEulerFromQuaternion( quaternion );
+        moon.rotation.setEulerFromQuaternion( quaternion );
+        
+        // moon.position.x=Math.sin(0*0.2)*800;
+        // moon.position.z=Math.cos(0*0.2)*800;
+
+        mercury.position.x=Math.sin(t*0.3)*8000;
+        mercury.position.z=Math.cos(t*0.3)*8000;
+
+        venus.position.x=Math.sin(t*0.2)*17000;
+        venus.position.z=Math.cos(t*0.2)*17000;
+
+        mars.position.x=Math.sin(t*0.08)*50000;
+        mars.position.z=Math.cos(t*0.08)*50000;
+
+        jupeter.position.x=Math.sin(t*0.06)*(-74000);
+        jupeter.position.z=Math.cos(t*0.06)*(-74000);
+
+        saturn.position.x=Math.sin(t*0.04)*98000;
+        saturn.position.z=Math.cos(t*0.04)*98000;
+
+        ring.position.x=saturn.position.x;
+        ring.position.z=saturn.position.z;
+     
+        //camera.position.x=saturn.position.x;
+        //camera.position.z=saturn.position.z+10000;
+        //camera.lookAt(saturn.position);
+
+        uranus.position.x=Math.sin(t*0.02)*120000;
+        uranus.position.z=Math.cos(t*0.02)*120000;
+
+        neptune.position.x=Math.sin(t*0.01)*180000;
+        neptune.position.z=Math.cos(t*0.01)*180000;
+    //add orbits of earth,mercury,venus,mars,jupeter,saturn,uranus,nepture
+        //earth.rotation.y+=0.01;
+        //moon.rotation.y+=0.01;
+        mercury.rotation.y+=0.01;
+        venus.rotation.y+=0.01;
+        mars.rotation.y+=0.01;
+        jupeter.rotation.y+=0.01;
+        saturn.rotation.y+=0.01;
+        ring.rotation.y-=0.01;
+        uranus.rotation.y+=0.01;
+        neptune.rotation.y+=0.01;
+
+        theta +=Math.PI/180*2*0.1;
+    	t+=Math.PI/180*2*0.1;
+
+        render.autoClear = false;
+        render.clear();
+        render.render(backgroundScene , backgroundCamera);
+        render.render(scene,camera);
+
+    }
+    </script>
+    </body>
+    </html>
